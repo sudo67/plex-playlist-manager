@@ -517,7 +517,7 @@ app.get('/api/search', async (req, res) => {
             return res.status(400).json({ error: 'Not connected to Plex server' });
         }
         
-        const { query, type = 'track' } = req.query;
+        const { query, type } = req.query;
         if (!query) {
             return res.status(400).json({ error: 'Search query is required' });
         }
