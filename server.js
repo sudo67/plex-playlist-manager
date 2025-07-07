@@ -307,6 +307,16 @@ app.get('/api/plex/discover', async (req, res) => {
 
 app.post('/api/connect', async (req, res) => {
     try {
+        // Debug the raw request body first
+        logger.debug('Raw request body received', {
+            body: req.body,
+            bodyType: typeof req.body,
+            serverUrlRaw: req.body.serverUrl,
+            serverUrlRawType: typeof req.body.serverUrl,
+            tokenRaw: typeof req.body.token === 'string' ? req.body.token.substring(0, 8) + '...' : req.body.token,
+            tokenRawType: typeof req.body.token
+        });
+        
         let { serverUrl, token, saveConfig = false } = req.body;
         
         // Ensure we have strings
@@ -348,7 +358,23 @@ app.post('/api/connect', async (req, res) => {
             });
         }
 
-        logger.plexConnection('Attempting connection', { serverUrl });
+        logger.plexConnection('Attempting connection', { 
+            serverUrl,
+            serverUrlType: typeof serverUrl,
+            serverUrlLength: serverUrl.length,
+            token: token.substring(0, 8) + '...',
+            tokenType: typeof token,
+            tokenLength: token.length
+        });
+        
+        // Additional validation before creating PlexClient
+        if (typeof serverUrl !== 'string') {
+            throw new Error(`Server URL must be a string, got ${typeof serverUrl}: ${serverUrl}`);
+        }
+        
+        if (typeof token !== 'string') {
+            throw new Error(`Token must be a string, got ${typeof token}: ${token}`);
+        }
         
         plexClient = new PlexClient(serverUrl, token);
         await plexClient.testConnection();
