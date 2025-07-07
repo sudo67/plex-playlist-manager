@@ -6,7 +6,7 @@
   "plex": {
     "serverUrl": "http://192.168.1.110:32400",
     "token": "MvAohw1bdWJYMKYkyV_f",
-    "autoConnect": false
+    "autoConnect": true
   },
   "ui": {
     "theme": "dark",
