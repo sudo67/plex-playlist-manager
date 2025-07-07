@@ -110,6 +110,7 @@ app.post('/api/config/reset', (req, res) => {
 
 app.get('/api/plex/discover', async (req, res) => {
     try {
+        const axios = require('axios');
         const commonPorts = [32400, 32401, 32402];
         const commonHosts = ['localhost', '127.0.0.1', 'plex.local'];
         const discoveries = [];
@@ -118,17 +119,18 @@ app.get('/api/plex/discover', async (req, res) => {
             for (const port of commonPorts) {
                 const url = `http://${host}:${port}`;
                 try {
-                    const testClient = new PlexClient(url, 'test');
-                    const response = await fetch(`${url}/identity`, { 
-                        method: 'GET',
-                        timeout: 2000 
+                    const response = await axios.get(`${url}/identity`, { 
+                        timeout: 2000,
+                        validateStatus: () => true
                     });
-                    if (response.ok) {
-                        const data = await response.text();
+                    if (response.status === 200) {
+                        const data = response.data;
                         discoveries.push({
                             url,
                             status: 'reachable',
-                            info: data.includes('MediaContainer') ? 'Plex Server Found' : 'Unknown Service'
+                            info: (typeof data === 'string' && data.includes('MediaContainer')) || 
+                                  (typeof data === 'object' && data.MediaContainer) ? 
+                                  'Plex Server Found' : 'Unknown Service'
                         });
                     }
                 } catch (error) {

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
-import dotenv from 'dotenv';
-import { PlaylistManager } from './lib/playlist-manager.js';
+const { Command } = require('commander');
+const dotenv = require('dotenv');
+const PlaylistManager = require('./lib/playlist-manager');
 
 dotenv.config();
 
