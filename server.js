@@ -152,59 +152,187 @@ app.post('/api/config/reset', (req, res) => {
 });
 
 app.get('/api/plex/discover', async (req, res) => {
+    logger.info('Starting Plex server discovery');
+    
     try {
         const axios = require('axios');
-        const commonPorts = [32400, 32401, 32402];
-        const commonHosts = ['localhost', '127.0.0.1', 'plex.local'];
+        const os = require('os');
         const discoveries = [];
+        const commonPorts = [32400, 32401, 32402, 32403];
         
-        for (const host of commonHosts) {
-            for (const port of commonPorts) {
-                const url = `http://${host}:${port}`;
-                try {
-                    const response = await axios.get(`${url}/identity`, { 
-                        timeout: 2000,
-                        validateStatus: () => true
-                    });
-                    if (response.status === 200) {
-                        const data = response.data;
-                        discoveries.push({
-                            url,
-                            status: 'reachable',
-                            info: (typeof data === 'string' && data.includes('MediaContainer')) || 
-                                  (typeof data === 'object' && data.MediaContainer) ? 
-                                  'Plex Server Found' : 'Unknown Service'
-                        });
+        // Get local network interfaces to scan local subnet
+        const networkInterfaces = os.networkInterfaces();
+        const localHosts = ['localhost', '127.0.0.1'];
+        
+        // Add local network IPs
+        for (const interfaceName in networkInterfaces) {
+            const interfaces = networkInterfaces[interfaceName];
+            for (const iface of interfaces) {
+                if (iface.family === 'IPv4' && !iface.internal) {
+                    // Add the interface IP itself
+                    localHosts.push(iface.address);
+                    
+                    // Add common local network IPs based on subnet
+                    const ipParts = iface.address.split('.');
+                    if (ipParts[0] === '192' && ipParts[1] === '168') {
+                        // Scan common IPs in 192.168.x.x networks
+                        const subnet = `${ipParts[0]}.${ipParts[1]}.${ipParts[2]}`;
+                        for (const lastOctet of [1, 2, 10, 100, 110, 200, 254]) {
+                            localHosts.push(`${subnet}.${lastOctet}`);
+                        }
                     }
-                } catch (error) {
-                    // Ignore connection errors for discovery
                 }
             }
         }
         
+        // Add common hostnames
+        localHosts.push('plex.local', 'plex', 'mediaserver', 'nas');
+        
+        // Remove duplicates
+        const uniqueHosts = [...new Set(localHosts)];
+        
+        logger.debug('Scanning hosts for Plex servers', { 
+            hostCount: uniqueHosts.length,
+            ports: commonPorts 
+        });
+        
+        // Create promises for all host/port combinations
+        const scanPromises = [];
+        
+        for (const host of uniqueHosts) {
+            for (const port of commonPorts) {
+                const url = `http://${host}:${port}`;
+                
+                const scanPromise = (async () => {
+                    try {
+                        logger.trace('Scanning', { url });
+                        
+                        // Try multiple endpoints to identify Plex
+                        const endpoints = ['/identity', '/', '/web'];
+                        let bestResponse = null;
+                        let serverInfo = null;
+                        
+                        for (const endpoint of endpoints) {
+                            try {
+                                const response = await axios.get(`${url}${endpoint}`, { 
+                                    timeout: 3000,
+                                    validateStatus: () => true,
+                                    headers: {
+                                        'User-Agent': 'Plex-Playlist-Manager-Discovery/1.0.0'
+                                    }
+                                });
+                                
+                                if (response.status === 200) {
+                                    bestResponse = response;
+                                    
+                                    // Check if this is definitely a Plex server
+                                    const data = response.data;
+                                    const headers = response.headers;
+                                    
+                                    if (headers['x-plex-protocol'] || 
+                                        (typeof data === 'string' && data.includes('Plex')) ||
+                                        (typeof data === 'object' && data.MediaContainer)) {
+                                        
+                                        serverInfo = {
+                                            version: headers['x-plex-version'],
+                                            platform: headers['x-plex-platform'],
+                                            product: headers['x-plex-product'],
+                                            protocol: headers['x-plex-protocol']
+                                        };
+                                        break; // Found Plex server
+                                    }
+                                }
+                            } catch (endpointError) {
+                                // Continue to next endpoint
+                                continue;
+                            }
+                        }
+                        
+                        if (bestResponse && bestResponse.status === 200) {
+                            const discovery = {
+                                url,
+                                status: 'reachable',
+                                info: serverInfo ? 'Plex Media Server' : 'Web Service (Unknown)',
+                                details: serverInfo || {}
+                            };
+                            
+                            if (serverInfo) {
+                                discovery.info = `Plex Media Server ${serverInfo.version || ''}`.trim();
+                                discovery.isPlex = true;
+                            }
+                            
+                            logger.debug('Server found', discovery);
+                            return discovery;
+                        }
+                        
+                    } catch (error) {
+                        logger.trace('Scan failed', { url, error: error.message });
+                        return null;
+                    }
+                })();
+                
+                scanPromises.push(scanPromise);
+            }
+        }
+        
+        // Wait for all scans to complete (with reasonable timeout)
+        const results = await Promise.allSettled(scanPromises);
+        
+        // Collect successful discoveries
+        for (const result of results) {
+            if (result.status === 'fulfilled' && result.value) {
+                discoveries.push(result.value);
+            }
+        }
+        
+        // Sort discoveries - Plex servers first, then by URL
+        discoveries.sort((a, b) => {
+            if (a.isPlex && !b.isPlex) return -1;
+            if (!a.isPlex && b.isPlex) return 1;
+            return a.url.localeCompare(b.url);
+        });
+        
+        logger.info('Plex discovery completed', { 
+            found: discoveries.length,
+            plexServers: discoveries.filter(d => d.isPlex).length
+        });
+        
         res.json({ discoveries });
+        
     } catch (error) {
+        logger.serverError(error, { endpoint: '/api/plex/discover' });
         res.status(500).json({ error: error.message });
     }
 });
 
 app.post('/api/connect', async (req, res) => {
     try {
-        const { serverUrl, token, saveConfig = false } = req.body;
+        let { serverUrl, token, saveConfig = false } = req.body;
+        
+        // Ensure we have strings
+        serverUrl = String(serverUrl || '').trim();
+        token = String(token || '').trim();
         
         logger.apiRequest('POST', '/api/connect', {
             serverUrl,
-            tokenLength: token?.length,
-            saveConfig
+            tokenLength: token.length,
+            saveConfig,
+            serverUrlType: typeof req.body.serverUrl,
+            tokenType: typeof req.body.token
         });
         
         if (!serverUrl || !token) {
-            logger.warn('Connection attempt with missing credentials');
+            logger.warn('Connection attempt with missing credentials', {
+                hasServerUrl: !!serverUrl,
+                hasToken: !!token,
+                serverUrlLength: serverUrl.length,
+                tokenLength: token.length
+            });
             return res.status(400).json({ 
                 error: 'Server URL and token are required',
                 details: {
-                    serverUrl: !serverUrl ? 'Server URL is missing' : 'OK',
-                    token: !token ? 'Token is missing' : 'OK'
+                    serverUrl: !serverUrl ? 'Server URL is missing or empty' : 'OK',
+                    token: !token ? 'Token is missing or empty' : 'OK'
                 }
             });
         }
