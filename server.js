@@ -2,13 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
+
+// Load environment variables FIRST
+dotenv.config();
+
 const PlexClient = require('./lib/plex-client');
 const PlaylistManager = require('./lib/playlist-manager');
 const ConfigManager = require('./lib/config-manager');
 const logger = require('./lib/logger');
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const configManager = new ConfigManager();

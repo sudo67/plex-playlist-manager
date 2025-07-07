@@ -202,8 +202,10 @@ class PlexPlaylistManager {
         grid.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading playlists...</div>';
 
         try {
+            console.log('🔄 Loading playlists...');
             const response = await fetch('/api/playlists');
             const playlists = await response.json();
+            console.log('📊 API Response:', response.ok, 'Playlists count:', playlists.length);
 
             if (response.ok) {
                 this.renderPlaylists(playlists);
@@ -211,6 +213,7 @@ class PlexPlaylistManager {
                 grid.innerHTML = `<div class="error">Error loading playlists: ${playlists.error}</div>`;
             }
         } catch (error) {
+            console.error('❌ Error loading playlists:', error);
             grid.innerHTML = `<div class="error">Error loading playlists: ${error.message}</div>`;
         }
     }
@@ -247,6 +250,13 @@ class PlexPlaylistManager {
         console.log('Generated playlist cards:', playlistCards.length);
         grid.innerHTML = playlistCards.join('');
         console.log('Grid innerHTML length:', grid.innerHTML.length);
+        
+        // Check how many cards are actually in the DOM
+        setTimeout(() => {
+            const actualCards = document.querySelectorAll('.playlist-card');
+            console.log('🎯 Actual playlist cards in DOM:', actualCards.length);
+            console.log('🎯 Playlist titles in DOM:', Array.from(actualCards).map(card => card.querySelector('h3').textContent));
+        }, 100);
         
         // Add event listeners for playlist cards
         this.bindPlaylistEvents();

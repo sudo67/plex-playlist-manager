@@ -249,7 +249,7 @@ body {
     background-color: var(--surface-color);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .view {
