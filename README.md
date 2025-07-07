@@ -1,9 +1,10 @@
 # Plex Playlist Manager
 
-A Node.js CLI application to connect to your Plex Media Server and manage playlists.
+A modern Node.js application to connect to your Plex Media Server and manage playlists. Available as both a CLI tool and a beautiful web interface.
 
 ## Features
 
+### CLI Features
 - ✅ Connect to Plex Media Server
 - 📋 List all playlists
 - 🔍 View playlist details and tracks
@@ -12,6 +13,15 @@ A Node.js CLI application to connect to your Plex Media Server and manage playli
 - 🎵 Search and add tracks to playlists
 - ➖ Remove tracks from playlists
 - 📚 List media libraries
+
+### Web UI Features
+- 🌐 Modern, responsive web interface
+- 🎨 Dark theme with intuitive design
+- 📱 Mobile-friendly responsive layout
+- 🔍 Real-time search functionality
+- 🎵 Drag-and-drop playlist management
+- 📊 Visual playlist overview
+- 🚀 Fast, single-page application
 
 ## Prerequisites
 
@@ -45,7 +55,27 @@ A Node.js CLI application to connect to your Plex Media Server and manage playli
 
 ## Usage
 
-### List all playlists
+### Web Interface (Recommended)
+
+Start the web server:
+```bash
+npm run web
+```
+
+Then open your browser to: http://localhost:3000
+
+The web interface provides:
+- Easy connection setup with form validation
+- Visual playlist management
+- Real-time search and add functionality
+- Responsive design for desktop and mobile
+- Modern, intuitive user experience
+
+### CLI Interface
+
+For command-line usage:
+
+#### List all playlists
 ```bash
 npm start list
 ```
@@ -85,6 +115,20 @@ npm start libraries
 ### Help
 ```bash
 npm start --help
+```
+
+### Development
+
+For development with auto-reload:
+
+**Web interface:**
+```bash
+npm run web-dev
+```
+
+**CLI interface:**
+```bash
+npm run dev
 ```
 
 ## Examples

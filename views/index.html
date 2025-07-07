@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plex Playlist Manager</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-music"></i> Plex Playlist Manager</h1>
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-indicator offline"></span>
+                    <span class="status-text">Not Connected</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="connection-panel" id="connectionPanel">
+                <div class="card">
+                    <h2><i class="fas fa-plug"></i> Connect to Plex Server</h2>
+                    <form id="connectionForm">
+                        <div class="form-group">
+                            <label for="serverUrl">Server URL</label>
+                            <input type="url" id="serverUrl" placeholder="http://localhost:32400" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="token">Plex Token</label>
+                            <input type="password" id="token" placeholder="Your Plex token" required>
+                            <small>Find your token at <a href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/" target="_blank">Plex Support</a></small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-link"></i> Connect
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="dashboard" id="dashboard" style="display: none;">
+                <div class="sidebar">
+                    <nav class="nav">
+                        <button class="nav-item active" data-view="playlists">
+                            <i class="fas fa-list"></i> Playlists
+                        </button>
+                        <button class="nav-item" data-view="search">
+                            <i class="fas fa-search"></i> Search & Add
+                        </button>
+                        <button class="nav-item" data-view="libraries">
+                            <i class="fas fa-folder"></i> Libraries
+                        </button>
+                    </nav>
+                </div>
+
+                <div class="content">
+                    <div class="view active" id="playlistsView">
+                        <div class="view-header">
+                            <h2><i class="fas fa-list"></i> Your Playlists</h2>
+                            <button class="btn btn-primary" id="createPlaylistBtn">
+                                <i class="fas fa-plus"></i> Create Playlist
+                            </button>
+                        </div>
+                        <div class="playlists-grid" id="playlistsGrid">
+                            <div class="loading">
+                                <i class="fas fa-spinner fa-spin"></i> Loading playlists...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="view" id="searchView">
+                        <div class="view-header">
+                            <h2><i class="fas fa-search"></i> Search Music</h2>
+                        </div>
+                        <div class="search-container">
+                            <div class="search-box">
+                                <input type="text" id="searchInput" placeholder="Search for songs, artists, albums...">
+                                <button id="searchBtn" class="btn btn-primary">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <div class="search-results" id="searchResults"></div>
+                        </div>
+                    </div>
+
+                    <div class="view" id="librariesView">
+                        <div class="view-header">
+                            <h2><i class="fas fa-folder"></i> Media Libraries</h2>
+                        </div>
+                        <div class="libraries-grid" id="librariesGrid">
+                            <div class="loading">
+                                <i class="fas fa-spinner fa-spin"></i> Loading libraries...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="playlistModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Create Playlist</h3>
+                <button class="modal-close" id="modalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="playlistForm">
+                    <div class="form-group">
+                        <label for="playlistName">Playlist Name</label>
+                        <input type="text" id="playlistName" placeholder="Enter playlist name" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="playlistDetailsModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="playlistDetailsTitle">Playlist Details</h3>
+                <button class="modal-close" id="playlistDetailsClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="playlist-info" id="playlistInfo"></div>
+                <div class="playlist-tracks" id="playlistTracks"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <div class="toast-content">
+            <span class="toast-message" id="toastMessage"></span>
+            <button class="toast-close" id="toastClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
