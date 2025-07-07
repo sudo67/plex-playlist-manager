@@ -22,6 +22,11 @@ A modern Node.js application to connect to your Plex Media Server and manage pla
 - 🎵 Drag-and-drop playlist management
 - 📊 Visual playlist overview
 - 🚀 Fast, single-page application
+- ⚙️ **First-time setup wizard** with guided configuration
+- 🔧 **Advanced configuration page** with all settings
+- 🔍 **Automatic Plex server discovery**
+- 💾 **Configuration export/import**
+- 🔄 **Auto-connect on startup**
 
 ## Prerequisites
 
@@ -29,7 +34,7 @@ A modern Node.js application to connect to your Plex Media Server and manage pla
 - Access to a Plex Media Server
 - Plex authentication token
 
-## Setup
+## Quick Start
 
 1. **Clone or download this project**
 
@@ -38,11 +43,30 @@ A modern Node.js application to connect to your Plex Media Server and manage pla
    npm install
    ```
 
-3. **Get your Plex token:**
+3. **Start the web interface:**
+   ```bash
+   npm run web
+   ```
+
+4. **Open your browser to:** http://localhost:3000
+
+5. **Follow the setup wizard** - it will guide you through:
+   - Finding your Plex server (automatic discovery available)
+   - Getting your Plex authentication token (with helpful instructions)
+   - Configuring the application settings
+   - Testing the connection
+
+That's it! The setup wizard makes configuration easy and provides helpful guidance for each step.
+
+## Manual Configuration (Optional)
+
+If you prefer manual setup or need to configure environment variables:
+
+1. **Get your Plex token:**
    - Visit: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
    - Follow the instructions to find your X-Plex-Token
 
-4. **Configure environment:**
+2. **Configure environment (optional):**
    ```bash
    cp .env.example .env
    ```
@@ -64,12 +88,35 @@ npm run web
 
 Then open your browser to: http://localhost:3000
 
+#### First Time Setup
+On first launch, you'll be guided through a setup wizard that helps you:
+- **Discover Plex servers** automatically on your network
+- **Configure authentication** with step-by-step token instructions
+- **Customize settings** like port, theme, and auto-refresh
+- **Test connections** before saving
+
+#### Configuration Management
+Access the configuration page anytime via the gear icon (⚙️) in the header:
+- **Server settings** - Change port, host, and connection details
+- **Plex configuration** - Update server URL, token, and auto-connect
+- **Interface settings** - Customize theme, refresh intervals
+- **Advanced options** - Export/import config, reset to defaults
+
+#### Custom Port
+To run on a different port:
+```bash
+PORT=8080 npm run web
+```
+Or configure it permanently in the settings page.
+
 The web interface provides:
 - Easy connection setup with form validation
 - Visual playlist management
 - Real-time search and add functionality
 - Responsive design for desktop and mobile
 - Modern, intuitive user experience
+- Guided setup for new users
+- Comprehensive configuration management
 
 ### CLI Interface
 

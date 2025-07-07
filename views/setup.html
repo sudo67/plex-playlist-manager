@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plex Playlist Manager - Setup</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .setup-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--background-color) 0%, var(--surface-color) 100%);
+            padding: 2rem;
+        }
+        
+        .setup-wizard {
+            background: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 600px;
+            overflow: hidden;
+        }
+        
+        .setup-header {
+            background: var(--primary-color);
+            color: var(--background-color);
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .setup-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+        
+        .setup-header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+        }
+        
+        .setup-steps {
+            display: flex;
+            background: var(--background-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .setup-step {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            border-right: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+        
+        .setup-step:last-child {
+            border-right: none;
+        }
+        
+        .setup-step.active {
+            background: var(--primary-color);
+            color: var(--background-color);
+        }
+        
+        .setup-step.completed {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .setup-content {
+            padding: 2rem;
+        }
+        
+        .step-content {
+            display: none;
+        }
+        
+        .step-content.active {
+            display: block;
+        }
+        
+        .discovery-results {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: var(--background-color);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        
+        .discovery-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        
+        .discovery-item.reachable {
+            border-color: var(--success-color);
+        }
+        
+        .help-section {
+            background: var(--background-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        .help-section h4 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .help-steps {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .help-steps li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .help-steps li:last-child {
+            border-bottom: none;
+        }
+        
+        .setup-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        @media (max-width: 768px) {
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .setup-steps {
+                flex-direction: column;
+            }
+            
+            .setup-step {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .setup-step:last-child {
+                border-bottom: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-wizard">
+            <div class="setup-header">
+                <h1><i class="fas fa-magic"></i> Welcome to Plex Playlist Manager</h1>
+                <p>Let's get you set up in just a few steps</p>
+            </div>
+            
+            <div class="setup-steps">
+                <div class="setup-step active" data-step="1">
+                    <i class="fas fa-server"></i>
+                    <div>Server Discovery</div>
+                </div>
+                <div class="setup-step" data-step="2">
+                    <i class="fas fa-key"></i>
+                    <div>Plex Configuration</div>
+                </div>
+                <div class="setup-step" data-step="3">
+                    <i class="fas fa-cog"></i>
+                    <div>App Settings</div>
+                </div>
+                <div class="setup-step" data-step="4">
+                    <i class="fas fa-check"></i>
+                    <div>Complete</div>
+                </div>
+            </div>
+            
+            <div class="setup-content">
+                <!-- Step 1: Server Discovery -->
+                <div class="step-content active" id="step1">
+                    <h3><i class="fas fa-search"></i> Find Your Plex Server</h3>
+                    <p>Let's locate your Plex Media Server. We'll scan common locations automatically.</p>
+                    
+                    <button class="btn btn-primary" id="discoverBtn">
+                        <i class="fas fa-search"></i> Scan for Plex Servers
+                    </button>
+                    
+                    <div class="discovery-results" id="discoveryResults" style="display: none;">
+                        <h4>Discovered Servers:</h4>
+                        <div id="discoveryList"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="manualServerUrl">Or enter your server URL manually:</label>
+                        <input type="url" id="manualServerUrl" placeholder="http://192.168.1.100:32400">
+                        <small>Common format: http://[IP_ADDRESS]:32400</small>
+                    </div>
+                    
+                    <div class="help-section">
+                        <h4><i class="fas fa-question-circle"></i> Need Help Finding Your Server?</h4>
+                        <ul class="help-steps">
+                            <li><strong>Local Network:</strong> Usually http://localhost:32400 or your computer's IP</li>
+                            <li><strong>Remote Access:</strong> Check your Plex account settings for remote access URL</li>
+                            <li><strong>Custom Port:</strong> If you changed the port, use that instead of 32400</li>
+                            <li><strong>HTTPS:</strong> Some setups require https:// instead of http://</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Plex Configuration -->
+                <div class="step-content" id="step2">
+                    <h3><i class="fas fa-key"></i> Plex Authentication</h3>
+                    <p>Now we need your Plex authentication token to connect to your server.</p>
+                    
+                    <div class="form-group">
+                        <label for="serverUrl">Plex Server URL</label>
+                        <input type="url" id="serverUrl" placeholder="http://localhost:32400" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="plexToken">Plex Token</label>
+                        <input type="password" id="plexToken" placeholder="Your Plex authentication token" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="autoConnect"> 
+                            Automatically connect on startup
+                        </label>
+                    </div>
+                    
+                    <button class="btn btn-secondary" id="testConnectionBtn">
+                        <i class="fas fa-plug"></i> Test Connection
+                    </button>
+                    
+                    <div class="help-section">
+                        <h4><i class="fas fa-info-circle"></i> How to Get Your Plex Token</h4>
+                        <ul class="help-steps">
+                            <li>Open Plex Web App in your browser</li>
+                            <li>Play any media item</li>
+                            <li>Press F12 to open Developer Tools</li>
+                            <li>Go to Network tab and look for requests</li>
+                            <li>Find a request with "X-Plex-Token" parameter</li>
+                            <li>Copy the token value (long string of letters and numbers)</li>
+                        </ul>
+                        <p><strong>Alternative:</strong> <a href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/" target="_blank">Official Plex Guide</a></p>
+                    </div>
+                </div>
+                
+                <!-- Step 3: App Settings -->
+                <div class="step-content" id="step3">
+                    <h3><i class="fas fa-cog"></i> Application Settings</h3>
+                    <p>Configure how the application behaves and customize your experience.</p>
+                    
+                    <div class="config-grid">
+                        <div class="form-group">
+                            <label for="appPort">Web Server Port</label>
+                            <input type="number" id="appPort" value="3000" min="1024" max="65535">
+                            <small>Port for the web interface (requires restart)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="appHost">Host Address</label>
+                            <input type="text" id="appHost" value="localhost">
+                            <small>Usually localhost or 0.0.0.0 for all interfaces</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="autoRefresh" checked> 
+                            Auto-refresh playlist data
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="refreshInterval">Refresh Interval (seconds)</label>
+                        <input type="number" id="refreshInterval" value="30" min="10" max="300">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="theme">Theme</label>
+                        <select id="theme">
+                            <option value="dark">Dark (Default)</option>
+                            <option value="light">Light</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Complete -->
+                <div class="step-content" id="step4">
+                    <h3><i class="fas fa-check-circle"></i> Setup Complete!</h3>
+                    <p>Congratulations! Your Plex Playlist Manager is now configured and ready to use.</p>
+                    
+                    <div class="help-section">
+                        <h4><i class="fas fa-rocket"></i> What's Next?</h4>
+                        <ul class="help-steps">
+                            <li><strong>Manage Playlists:</strong> Create, edit, and delete your music playlists</li>
+                            <li><strong>Search & Add:</strong> Find tracks and add them to your playlists</li>
+                            <li><strong>Browse Libraries:</strong> Explore your media libraries</li>
+                            <li><strong>Configuration:</strong> Access settings anytime via the gear icon</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="help-section">
+                        <h4><i class="fas fa-tools"></i> Configuration Summary</h4>
+                        <div id="configSummary"></div>
+                    </div>
+                </div>
+                
+                <div class="setup-actions">
+                    <button class="btn btn-secondary" id="prevBtn" style="display: none;">
+                        <i class="fas fa-arrow-left"></i> Previous
+                    </button>
+                    <div></div>
+                    <button class="btn btn-primary" id="nextBtn">
+                        Next <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <div class="toast-content">
+            <span class="toast-message" id="toastMessage"></span>
+            <button class="toast-close" id="toastClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="/js/setup.js"></script>
+</body>
+</html>

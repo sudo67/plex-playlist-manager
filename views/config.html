@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration - Plex Playlist Manager</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-cog"></i> Configuration</h1>
+                <div class="header-actions">
+                    <a href="/" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to App
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="config-container">
+                <div class="config-sidebar">
+                    <nav class="config-nav">
+                        <button class="config-nav-item active" data-section="plex">
+                            <i class="fas fa-server"></i> Plex Server
+                        </button>
+                        <button class="config-nav-item" data-section="server">
+                            <i class="fas fa-globe"></i> Web Server
+                        </button>
+                        <button class="config-nav-item" data-section="ui">
+                            <i class="fas fa-palette"></i> Interface
+                        </button>
+                        <button class="config-nav-item" data-section="advanced">
+                            <i class="fas fa-tools"></i> Advanced
+                        </button>
+                    </nav>
+                </div>
+
+                <div class="config-content">
+                    <!-- Plex Server Configuration -->
+                    <div class="config-section active" id="plexSection">
+                        <div class="section-header">
+                            <h2><i class="fas fa-server"></i> Plex Server Configuration</h2>
+                            <p>Configure your connection to Plex Media Server</p>
+                        </div>
+
+                        <div class="config-form">
+                            <div class="form-group">
+                                <label for="plexServerUrl">Server URL</label>
+                                <input type="url" id="plexServerUrl" placeholder="http://localhost:32400">
+                                <small>The URL where your Plex Media Server is running</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="plexToken">Authentication Token</label>
+                                <div class="input-group">
+                                    <input type="password" id="plexToken" placeholder="Your Plex token">
+                                    <button type="button" class="btn btn-secondary" id="toggleToken">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <small>Your Plex authentication token for API access</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="plexAutoConnect">
+                                    Automatically connect on startup
+                                </label>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-primary" id="testPlexConnection">
+                                    <i class="fas fa-plug"></i> Test Connection
+                                </button>
+                                <button class="btn btn-secondary" id="discoverPlex">
+                                    <i class="fas fa-search"></i> Discover Servers
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Web Server Configuration -->
+                    <div class="config-section" id="serverSection">
+                        <div class="section-header">
+                            <h2><i class="fas fa-globe"></i> Web Server Configuration</h2>
+                            <p>Configure the web interface server settings</p>
+                        </div>
+
+                        <div class="config-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="serverPort">Port</label>
+                                    <input type="number" id="serverPort" min="1024" max="65535" value="3000">
+                                    <small>Port number for the web interface</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="serverHost">Host</label>
+                                    <input type="text" id="serverHost" value="localhost">
+                                    <small>Host address (localhost or 0.0.0.0)</small>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Note:</strong> Changing server settings requires restarting the application.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- UI Configuration -->
+                    <div class="config-section" id="uiSection">
+                        <div class="section-header">
+                            <h2><i class="fas fa-palette"></i> Interface Configuration</h2>
+                            <p>Customize the appearance and behavior of the interface</p>
+                        </div>
+
+                        <div class="config-form">
+                            <div class="form-group">
+                                <label for="uiTheme">Theme</label>
+                                <select id="uiTheme">
+                                    <option value="dark">Dark</option>
+                                    <option value="light">Light</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="uiAutoRefresh">
+                                    Auto-refresh playlist data
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="uiRefreshInterval">Refresh Interval (seconds)</label>
+                                <input type="number" id="uiRefreshInterval" min="10" max="300" value="30">
+                                <small>How often to automatically refresh data</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Configuration -->
+                    <div class="config-section" id="advancedSection">
+                        <div class="section-header">
+                            <h2><i class="fas fa-tools"></i> Advanced Configuration</h2>
+                            <p>Advanced settings and maintenance options</p>
+                        </div>
+
+                        <div class="config-form">
+                            <div class="form-group">
+                                <label>Configuration Export/Import</label>
+                                <div class="form-actions">
+                                    <button class="btn btn-secondary" id="exportConfig">
+                                        <i class="fas fa-download"></i> Export Configuration
+                                    </button>
+                                    <button class="btn btn-secondary" id="importConfig">
+                                        <i class="fas fa-upload"></i> Import Configuration
+                                    </button>
+                                    <input type="file" id="configFile" accept=".json" style="display: none;">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Reset Configuration</label>
+                                <button class="btn btn-danger" id="resetConfig">
+                                    <i class="fas fa-trash"></i> Reset to Defaults
+                                </button>
+                                <small>This will reset all settings to their default values</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Setup Wizard</label>
+                                <a href="/setup" class="btn btn-secondary">
+                                    <i class="fas fa-magic"></i> Run Setup Wizard
+                                </a>
+                                <small>Re-run the initial setup process</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="config-actions">
+                        <button class="btn btn-success" id="saveConfig">
+                            <i class="fas fa-save"></i> Save Configuration
+                        </button>
+                        <button class="btn btn-secondary" id="cancelConfig">
+                            <i class="fas fa-times"></i> Cancel Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast" id="toast">
+        <div class="toast-content">
+            <span class="toast-message" id="toastMessage"></span>
+            <button class="toast-close" id="toastClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <style>
+        .config-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+            height: calc(100vh - 120px);
+        }
+
+        .config-sidebar {
+            background-color: var(--surface-color);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            height: fit-content;
+        }
+
+        .config-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .config-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: var(--border-radius);
+            background: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1rem;
+            text-align: left;
+            width: 100%;
+        }
+
+        .config-nav-item:hover {
+            background-color: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .config-nav-item.active {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+        }
+
+        .config-content {
+            background-color: var(--surface-color);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            overflow-y: auto;
+        }
+
+        .config-section {
+            display: none;
+            padding: 2rem;
+        }
+
+        .config-section.active {
+            display: block;
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-header h2 {
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .config-form {
+            max-width: 600px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .input-group input {
+            flex: 1;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+            border: 1px solid;
+        }
+
+        .alert-warning {
+            background-color: rgba(255, 149, 0, 0.1);
+            border-color: var(--warning-color);
+            color: var(--warning-color);
+        }
+
+        .config-actions {
+            position: sticky;
+            bottom: 0;
+            background-color: var(--surface-color);
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .config-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .config-sidebar {
+                order: 2;
+            }
+            
+            .config-nav {
+                flex-direction: row;
+                overflow-x: auto;
+            }
+            
+            .config-nav-item {
+                white-space: nowrap;
+                min-width: fit-content;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <script src="/js/config.js"></script>
+</body>
+</html>
