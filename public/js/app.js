@@ -8,6 +8,24 @@ class PlexPlaylistManager {
     init() {
         this.bindEvents();
         this.updateConnectionStatus();
+        this.checkAutoConnection();
+    }
+
+    async checkAutoConnection() {
+        try {
+            // Check if we're already connected by trying to load playlists
+            const response = await fetch('/api/playlists');
+            if (response.ok) {
+                this.isConnected = true;
+                this.updateConnectionStatus();
+                this.showDashboard();
+                this.loadPlaylists();
+                this.loadLibraries();
+                console.log('Auto-connected to Plex server');
+            }
+        } catch (error) {
+            console.log('No auto-connection available');
+        }
     }
 
     bindEvents() {
@@ -72,6 +90,37 @@ class PlexPlaylistManager {
 
         document.getElementById('logSearchFilter').addEventListener('input', () => {
             this.filterLogs();
+        });
+    }
+
+    bindPlaylistEvents() {
+        // Playlist card click events
+        document.querySelectorAll('.playlist-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (!e.target.closest('.playlist-actions')) {
+                    const playlistId = card.dataset.playlistId;
+                    this.viewPlaylist(playlistId);
+                }
+            });
+        });
+
+        // View playlist button events
+        document.querySelectorAll('.view-playlist').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const playlistId = btn.dataset.playlistId;
+                this.viewPlaylist(playlistId);
+            });
+        });
+
+        // Delete playlist button events
+        document.querySelectorAll('.delete-playlist').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const playlistId = btn.dataset.playlistId;
+                const playlistTitle = btn.dataset.playlistTitle;
+                this.deletePlaylist(playlistId, playlistTitle);
+            });
         });
     }
 
@@ -169,29 +218,38 @@ class PlexPlaylistManager {
     renderPlaylists(playlists) {
         const grid = document.getElementById('playlistsGrid');
         
+        console.log('Rendering playlists:', playlists.length, playlists);
+        
         if (playlists.length === 0) {
             grid.innerHTML = '<div class="empty-state">No playlists found. Create your first playlist!</div>';
             return;
         }
 
-        grid.innerHTML = playlists.map(playlist => `
-            <div class="playlist-card" onclick="app.viewPlaylist('${playlist.ratingKey}')">
-                <h3>${playlist.title}</h3>
+        const playlistCards = playlists.map(playlist => `
+            <div class="playlist-card" data-playlist-id="${playlist.ratingKey}">
+                <h3>${this.escapeHtml(playlist.title)}</h3>
                 <div class="playlist-meta">
                     <i class="fas fa-music"></i> ${playlist.leafCount || 0} tracks
                     <br>
                     <i class="fas fa-clock"></i> ${playlist.duration ? this.formatDuration(playlist.duration) : 'Unknown'}
                 </div>
-                <div class="playlist-actions" onclick="event.stopPropagation()">
-                    <button class="btn btn-secondary" onclick="app.viewPlaylist('${playlist.ratingKey}')">
+                <div class="playlist-actions">
+                    <button class="btn btn-secondary view-playlist" data-playlist-id="${playlist.ratingKey}">
                         <i class="fas fa-eye"></i> View
                     </button>
-                    <button class="btn btn-danger" onclick="app.deletePlaylist('${playlist.ratingKey}', '${playlist.title}')">
+                    <button class="btn btn-danger delete-playlist" data-playlist-id="${playlist.ratingKey}" data-playlist-title="${this.escapeHtml(playlist.title)}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
-        `).join('');
+        `);
+        
+        console.log('Generated playlist cards:', playlistCards.length);
+        grid.innerHTML = playlistCards.join('');
+        console.log('Grid innerHTML length:', grid.innerHTML.length);
+        
+        // Add event listeners for playlist cards
+        this.bindPlaylistEvents();
     }
 
     async loadLibraries() {
@@ -313,7 +371,10 @@ class PlexPlaylistManager {
         }
     }
 
-    showPlaylistDetails(playlist) {
+    showPlaylistDetails(data) {
+        const playlist = data.playlist;
+        const items = data.items || [];
+        
         document.getElementById('playlistDetailsTitle').textContent = playlist.title;
         
         const info = document.getElementById('playlistInfo');
@@ -322,14 +383,15 @@ class PlexPlaylistManager {
                 <h4>${playlist.title}</h4>
                 <p><i class="fas fa-music"></i> ${playlist.leafCount || 0} tracks</p>
                 <p><i class="fas fa-clock"></i> ${playlist.duration ? this.formatDuration(playlist.duration) : 'Unknown duration'}</p>
+                ${playlist.summary ? `<p class="playlist-description">${playlist.summary}</p>` : ''}
             </div>
         `;
 
         const tracks = document.getElementById('playlistTracks');
-        if (playlist.Metadata && playlist.Metadata.length > 0) {
+        if (items && items.length > 0) {
             tracks.innerHTML = `
                 <h4>Tracks</h4>
-                ${playlist.Metadata.map(track => `
+                ${items.map(track => `
                     <div class="track-item">
                         <div class="track-info">
                             <h5>${track.title}</h5>
@@ -345,7 +407,7 @@ class PlexPlaylistManager {
             tracks.innerHTML = '<p>No tracks in this playlist.</p>';
         }
 
-        this.currentPlaylist = playlist;
+        this.currentPlaylist = data;
         this.showModal('playlistDetailsModal');
     }
 

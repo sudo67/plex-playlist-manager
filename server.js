@@ -448,8 +448,10 @@ app.get('/api/playlists', async (req, res) => {
         }
         
         const playlists = await playlistManager.listPlaylists();
+        console.log('API returning playlists:', playlists.length);
         res.json(playlists);
     } catch (error) {
+        console.error('Error in /api/playlists:', error);
         res.status(500).json({ error: error.message });
     }
 });
