@@ -1,33 +1,76 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const dotenv = require('dotenv');
 const PlexClient = require('./lib/plex-client');
 const PlaylistManager = require('./lib/playlist-manager');
 const ConfigManager = require('./lib/config-manager');
+const logger = require('./lib/logger');
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const configManager = new ConfigManager();
 const serverConfig = configManager.getServerConfig();
-const PORT = process.env.PORT || serverConfig.port;
 
+// Priority: ENV variable > config file > default
+const PORT = process.env.WEB_PORT || process.env.PORT || serverConfig.port || 3000;
+const HOST = process.env.WEB_HOST || serverConfig.host || 'localhost';
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+// Request logging middleware
+if (process.env.DEBUG_API === 'true') {
+    app.use((req, res, next) => {
+        logger.apiRequest(req.method, req.path, {
+            query: req.query,
+            body: req.method !== 'GET' ? req.body : undefined,
+            userAgent: req.get('User-Agent'),
+            ip: req.ip
+        });
+        next();
+    });
+}
 
 let plexClient = null;
 let playlistManager = null;
 
 async function initializePlexConnection() {
     const plexConfig = configManager.getPlexConfig();
-    if (plexConfig.autoConnect && plexConfig.serverUrl && plexConfig.token) {
-        try {
-            plexClient = new PlexClient(plexConfig.serverUrl, plexConfig.token);
-            await plexClient.testConnection();
-            playlistManager = new PlaylistManager(plexClient);
-            console.log('Auto-connected to Plex server');
-        } catch (error) {
-            console.warn('Auto-connection to Plex failed:', error.message);
-        }
+    
+    if (!plexConfig.autoConnect) {
+        logger.info('Auto-connect disabled, skipping Plex initialization');
+        return;
+    }
+    
+    if (!plexConfig.serverUrl || !plexConfig.token) {
+        logger.warn('Auto-connect enabled but missing server URL or token');
+        return;
+    }
+    
+    logger.plexConnection('Attempting auto-connection', {
+        serverUrl: plexConfig.serverUrl,
+        tokenLength: plexConfig.token.length
+    });
+    
+    try {
+        plexClient = new PlexClient(plexConfig.serverUrl, plexConfig.token);
+        await plexClient.testConnection();
+        playlistManager = new PlaylistManager(plexClient);
+        logger.plexConnection('Auto-connection successful');
+    } catch (error) {
+        logger.plexError('Auto-connection failed', error, {
+            serverUrl: plexConfig.serverUrl,
+            troubleshooting: error.troubleshooting
+        });
+        
+        // Reset clients on failure
+        plexClient = null;
+        playlistManager = null;
     }
 }
 
@@ -149,28 +192,98 @@ app.post('/api/connect', async (req, res) => {
     try {
         const { serverUrl, token, saveConfig = false } = req.body;
         
+        logger.apiRequest('POST', '/api/connect', {
+            serverUrl,
+            tokenLength: token?.length,
+            saveConfig
+        });
+        
         if (!serverUrl || !token) {
-            return res.status(400).json({ error: 'Server URL and token are required' });
+            logger.warn('Connection attempt with missing credentials');
+            return res.status(400).json({ 
+                error: 'Server URL and token are required',
+                details: {
+                    serverUrl: !serverUrl ? 'Server URL is missing' : 'OK',
+                    token: !token ? 'Token is missing' : 'OK'
+                }
+            });
         }
 
+        // Validate URL format
+        try {
+            new URL(serverUrl);
+        } catch (urlError) {
+            logger.warn('Invalid server URL format', { serverUrl });
+            return res.status(400).json({ 
+                error: 'Invalid server URL format',
+                details: 'Please provide a valid URL (e.g., http://localhost:32400)'
+            });
+        }
+
+        logger.plexConnection('Attempting connection', { serverUrl });
+        
         plexClient = new PlexClient(serverUrl, token);
         await plexClient.testConnection();
         
         playlistManager = new PlaylistManager(plexClient);
         
         if (saveConfig) {
-            configManager.update({
+            const configSuccess = configManager.update({
                 plex: {
                     serverUrl,
                     token,
                     autoConnect: true
                 }
             });
+            
+            if (configSuccess) {
+                logger.configSave(true);
+            } else {
+                logger.configSave(false);
+            }
         }
         
-        res.json({ success: true, message: 'Connected to Plex server successfully' });
+        logger.plexConnection('Connection successful', { serverUrl });
+        res.json({ 
+            success: true, 
+            message: 'Connected to Plex server successfully',
+            serverInfo: {
+                url: serverUrl,
+                connected: true
+            }
+        });
+        
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        logger.apiError('POST', '/api/connect', error, {
+            serverUrl: req.body.serverUrl,
+            errorCode: error.errorCode,
+            httpStatus: error.httpStatus
+        });
+        
+        // Reset clients on connection failure
+        plexClient = null;
+        playlistManager = null;
+        
+        // Provide detailed error response
+        const errorResponse = {
+            error: error.message,
+            serverUrl: req.body.serverUrl,
+            timestamp: new Date().toISOString()
+        };
+        
+        if (error.troubleshooting) {
+            errorResponse.troubleshooting = error.troubleshooting;
+        }
+        
+        if (error.errorCode) {
+            errorResponse.errorCode = error.errorCode;
+        }
+        
+        if (error.httpStatus) {
+            errorResponse.httpStatus = error.httpStatus;
+        }
+        
+        res.status(500).json(errorResponse);
     }
 });
 
@@ -293,12 +406,53 @@ app.delete('/api/playlists/:id/tracks/:trackId', async (req, res) => {
     }
 });
 
-app.listen(PORT, async () => {
-    console.log(`Plex Playlist Manager Web UI running on http://localhost:${PORT}`);
-    console.log(`Setup completed: ${configManager.isSetupCompleted()}`);
+// Add logs endpoint for debugging
+app.get('/api/logs', (req, res) => {
+    try {
+        const lines = parseInt(req.query.lines) || 100;
+        const logs = logger.getRecentLogs(lines);
+        res.json({ logs });
+    } catch (error) {
+        logger.serverError(error, { endpoint: '/api/logs' });
+        res.status(500).json({ error: 'Failed to retrieve logs' });
+    }
+});
+
+// Add logs clear endpoint
+app.post('/api/logs/clear', (req, res) => {
+    try {
+        logger.clearLogs();
+        res.json({ success: true, message: 'Logs cleared successfully' });
+    } catch (error) {
+        logger.serverError(error, { endpoint: '/api/logs/clear' });
+        res.status(500).json({ error: 'Failed to clear logs' });
+    }
+});
+
+// Global error handler
+app.use((error, req, res, next) => {
+    logger.serverError(error, {
+        method: req.method,
+        path: req.path,
+        query: req.query,
+        body: req.body
+    });
+    
+    res.status(500).json({
+        error: 'Internal server error',
+        message: error.message,
+        timestamp: new Date().toISOString()
+    });
+});
+
+app.listen(PORT, HOST, async () => {
+    logger.serverStart(PORT, HOST);
+    logger.info(`Setup completed: ${configManager.isSetupCompleted()}`);
+    logger.info(`Log level: ${process.env.LOG_LEVEL || 'info'}`);
+    logger.info(`File logging: ${process.env.LOG_TO_FILE === 'true' ? 'enabled' : 'disabled'}`);
     
     if (!configManager.isSetupCompleted()) {
-        console.log('First time setup required. Visit http://localhost:' + PORT + ' to get started.');
+        logger.info(`First time setup required. Visit http://${HOST}:${PORT} to get started.`);
     } else {
         await initializePlexConnection();
     }

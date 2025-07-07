@@ -57,6 +57,9 @@
                         <button class="nav-item" data-view="libraries">
                             <i class="fas fa-folder"></i> Libraries
                         </button>
+                        <button class="nav-item" data-view="logs">
+                            <i class="fas fa-file-alt"></i> Debug Logs
+                        </button>
                     </nav>
                 </div>
 
@@ -97,6 +100,37 @@
                         <div class="libraries-grid" id="librariesGrid">
                             <div class="loading">
                                 <i class="fas fa-spinner fa-spin"></i> Loading libraries...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="view" id="logsView">
+                        <div class="view-header">
+                            <h2><i class="fas fa-file-alt"></i> Debug Logs</h2>
+                            <div class="logs-controls">
+                                <button class="btn btn-secondary" id="refreshLogsBtn">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                                <button class="btn btn-warning" id="clearLogsBtn">
+                                    <i class="fas fa-trash"></i> Clear Logs
+                                </button>
+                            </div>
+                        </div>
+                        <div class="logs-container">
+                            <div class="logs-filters">
+                                <select id="logLevelFilter">
+                                    <option value="">All Levels</option>
+                                    <option value="error">Error</option>
+                                    <option value="warn">Warning</option>
+                                    <option value="info">Info</option>
+                                    <option value="debug">Debug</option>
+                                </select>
+                                <input type="text" id="logSearchFilter" placeholder="Search logs...">
+                            </div>
+                            <div class="logs-content" id="logsContent">
+                                <div class="loading">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading logs...
+                                </div>
                             </div>
                         </div>
                     </div>

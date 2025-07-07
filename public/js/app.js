@@ -56,6 +56,23 @@ class PlexPlaylistManager {
         document.getElementById('toastClose').addEventListener('click', () => {
             this.hideToast();
         });
+
+        // Logs functionality
+        document.getElementById('refreshLogsBtn').addEventListener('click', () => {
+            this.loadLogs();
+        });
+
+        document.getElementById('clearLogsBtn').addEventListener('click', () => {
+            this.clearLogs();
+        });
+
+        document.getElementById('logLevelFilter').addEventListener('change', () => {
+            this.filterLogs();
+        });
+
+        document.getElementById('logSearchFilter').addEventListener('input', () => {
+            this.filterLogs();
+        });
     }
 
     async connect() {
@@ -126,6 +143,8 @@ class PlexPlaylistManager {
             this.loadPlaylists();
         } else if (viewName === 'libraries') {
             this.loadLibraries();
+        } else if (viewName === 'logs') {
+            this.loadLogs();
         }
     }
 
@@ -488,6 +507,108 @@ class PlexPlaylistManager {
             return `${hours}h ${minutes % 60}m`;
         } else {
             return `${minutes}m ${seconds % 60}s`;
+        }
+    }
+
+    async loadLogs() {
+        const container = document.getElementById('logsContent');
+        container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading logs...</div>';
+
+        try {
+            const response = await fetch('/api/logs?lines=200');
+            const data = await response.json();
+
+            if (response.ok) {
+                this.renderLogs(data.logs);
+            } else {
+                container.innerHTML = `<div class="error">Error loading logs: ${data.error}</div>`;
+            }
+        } catch (error) {
+            container.innerHTML = `<div class="error">Error loading logs: ${error.message}</div>`;
+        }
+    }
+
+    renderLogs(logs) {
+        const container = document.getElementById('logsContent');
+        
+        if (logs.length === 0) {
+            container.innerHTML = '<div class="empty-state">No logs available.</div>';
+            return;
+        }
+
+        this.allLogs = logs;
+        this.filterLogs();
+    }
+
+    filterLogs() {
+        if (!this.allLogs) return;
+
+        const levelFilter = document.getElementById('logLevelFilter').value;
+        const searchFilter = document.getElementById('logSearchFilter').value.toLowerCase();
+        const container = document.getElementById('logsContent');
+
+        let filteredLogs = this.allLogs;
+
+        if (levelFilter) {
+            filteredLogs = filteredLogs.filter(log => 
+                log.toLowerCase().includes(`[${levelFilter.toUpperCase()}]`)
+            );
+        }
+
+        if (searchFilter) {
+            filteredLogs = filteredLogs.filter(log => 
+                log.toLowerCase().includes(searchFilter)
+            );
+        }
+
+        if (filteredLogs.length === 0) {
+            container.innerHTML = '<div class="empty-state">No logs match the current filters.</div>';
+            return;
+        }
+
+        container.innerHTML = filteredLogs.map(log => {
+            const logLevel = this.extractLogLevel(log);
+            return `<div class="log-entry ${logLevel}">${this.escapeHtml(log)}</div>`;
+        }).join('');
+
+        // Auto-scroll to bottom
+        container.scrollTop = container.scrollHeight;
+    }
+
+    extractLogLevel(logLine) {
+        if (logLine.includes('[ERROR]')) return 'error';
+        if (logLine.includes('[WARN]')) return 'warn';
+        if (logLine.includes('[INFO]')) return 'info';
+        if (logLine.includes('[DEBUG]')) return 'debug';
+        return 'info';
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    async clearLogs() {
+        if (!confirm('Are you sure you want to clear all logs?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/logs/clear', {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                this.showToast('Logs cleared successfully', 'success');
+                this.loadLogs();
+            } else {
+                this.showToast('Failed to clear logs: ' + result.error, 'error');
+            }
+        } catch (error) {
+            this.showToast('Failed to clear logs: ' + error.message, 'error');
         }
     }
 }

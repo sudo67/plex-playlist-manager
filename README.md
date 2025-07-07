@@ -105,9 +105,45 @@ Access the configuration page anytime via the gear icon (⚙️) in the header:
 #### Custom Port
 To run on a different port:
 ```bash
-PORT=8080 npm run web
+WEB_PORT=8080 npm run web
 ```
 Or configure it permanently in the settings page.
+
+#### Environment Configuration
+Create a `.env` file to customize behavior:
+```bash
+# Web Server
+WEB_PORT=3000
+WEB_HOST=localhost
+
+# Logging
+LOG_LEVEL=info          # error, warn, info, debug, trace
+LOG_TO_FILE=true        # Enable file logging
+
+# Plex Connection
+PLEX_TIMEOUT=10000      # Connection timeout (ms)
+PLEX_RETRY_ATTEMPTS=3   # Number of retry attempts
+PLEX_RETRY_DELAY=2000   # Delay between retries (ms)
+
+# Debug Options
+DEBUG_PLEX=false        # Enable detailed Plex debugging
+DEBUG_API=false         # Enable API request logging
+```
+
+#### Debugging & Troubleshooting
+The application includes comprehensive logging and debugging features:
+
+- **Debug Logs View** - Access via the web interface to see real-time logs
+- **Robust Error Handling** - Detailed error messages with troubleshooting suggestions
+- **Connection Retry Logic** - Automatic retry with exponential backoff
+- **File Logging** - Persistent logs saved to `logs/app.log` (when enabled)
+- **Multiple Log Levels** - Filter logs by error, warn, info, debug levels
+
+**Common Issues:**
+- **Connection Refused**: Check if Plex server is running and accessible
+- **Authentication Failed**: Verify your Plex token is correct and has permissions
+- **Timeout Errors**: Increase `PLEX_TIMEOUT` or check network connectivity
+- **Port Conflicts**: Change `WEB_PORT` to an available port
 
 The web interface provides:
 - Easy connection setup with form validation
