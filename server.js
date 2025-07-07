@@ -560,6 +560,28 @@ app.delete('/api/playlists/:id/tracks/:trackId', async (req, res) => {
     }
 });
 
+// Debug endpoint to test request body parsing
+app.post('/api/debug/connect', (req, res) => {
+    logger.info('Debug connect endpoint called', {
+        body: req.body,
+        bodyType: typeof req.body,
+        serverUrl: req.body.serverUrl,
+        serverUrlType: typeof req.body.serverUrl,
+        serverUrlConstructor: req.body.serverUrl?.constructor?.name,
+        token: req.body.token,
+        tokenType: typeof req.body.token,
+        headers: req.headers
+    });
+    
+    res.json({
+        received: req.body,
+        types: {
+            serverUrl: typeof req.body.serverUrl,
+            token: typeof req.body.token
+        }
+    });
+});
+
 // Add logs endpoint for debugging
 app.get('/api/logs', (req, res) => {
     try {
